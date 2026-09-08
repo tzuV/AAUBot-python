@@ -1,0 +1,50 @@
+services:
+  vllm:
+    image: vllm/vllm-openai:latest
+    container_name: aaubot-vllm
+    environment:
+      - HUGGING_FACE_HUB_TOKEN=${HF_TOKEN:-}
+    volumes:
+      - hf-cache:/root/.cache/huggingface
+    command: >
+      --model ${VLLM_MODEL:-Qwen/Qwen3-8B}
+      --gpu-memory-utilization ${VLLM_GPU_MEM_UTIL:-0.90}
+      --max-model-len ${VLLM_MAX_MODEL_LEN:-8192}
+      --port 8000
+    ports:
+      - "8000:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 20
+      start_period: 300s
+    restart: unless-stopped
+
+  app:
+    build: .
+    container_name: aaubot-app
+    depends_on:
+      - vllm
+    environment:
+      - VLLM_HOST=vllm
+      - VLLM_PORT=8000
+      - VLLM_MODEL=${VLLM_MODEL:-Qwen/Qwen3-8B}
+      - DISCORD_TOKEN=${DISCORD_TOKEN:-}
+      - HF_TOKEN=${HF_TOKEN:-}
+    volumes:
+      - ./data:/app/data
+      - ./config.yaml:/app/config.yaml:ro
+    ports:
+      - "8001:8001"
+    restart: unless-stopped
+
+volumes:
+  hf-cache:

@@ -1,0 +1,73 @@
+# AAUBot-Python Configuration
+# ===========================
+# Edit this file to change models, retrieval params, and API settings.
+# Values can be overridden by environment variables (see .env.example).
+
+# Test mode — TRUE = host the model + Chainlit browser UI for testing (no Discord)
+# FALSE = production: FastAPI endpoint + Discord bot
+test:
+  enabled: false
+
+# Generator (LLM) — served by vLLM's OpenAI-compatible API
+generator:
+  model: "Qwen/Qwen3-8B"          # HuggingFace model ID; must match VLLM_MODEL in .env
+  vllm_host: "vllm"              # vLLM container hostname (docker-compose service name)
+  vllm_port: 8000
+  temperature: 0.3               # 0 = deterministic, 1 = creative
+  max_tokens: 1024              # max answer length in tokens
+  top_p: 0.95                  # nucleus sampling cutoff
+  system_prompt: |
+    You are a helpful Python programming teaching assistant for Danish
+    master's students in an IT-management course at Aalborg University (AAU).
+
+    Answer the student's question using ONLY the provided context from the
+    official Python documentation. Follow these rules:
+    1. Base your answer on the context below. If it does not contain the
+       answer, say "I don't have enough information in the Python
+       documentation to answer this."
+    2. Be concise and clear. These students are learning Python.
+    3. Include short code examples when helpful.
+    4. At the end, list which documentation sections you used.
+
+    --- Context from Python documentation ---
+    {context}
+    --- End of context ---
+
+# Embedding model — runs in the app container via sentence-transformers
+embedding:
+  model: "BAAI/bge-m3"          # sentence-transformers / HuggingFace model ID
+  device: "cpu"                # "cpu" (default, simple) or "cuda" (needs GPU in app container)
+  normalize: true              # normalize embeddings for cosine similarity
+
+# RAG retrieval settings
+rag:
+  top_k: 5                    # number of chunks to retrieve per query
+  chunk_size: 512              # characters per chunk during ingest
+  chunk_overlap: 64           # overlap between adjacent chunks
+
+# ChromaDB vector store (embedded, persistent on disk)
+chroma:
+  persist_path: "/app/data/chroma"
+  collection_name: "python_docs"
+
+# Python documentation source
+docs:
+  url: "https://docs.python.org/3/archives/python-3.13.0-docs-html.zip"
+  cache_path: "/app/data/docs"
+
+# Discord bot — students ask questions via Discord
+discord:
+  enabled: false              # set true (or set DISCORD_TOKEN env var) to start the bot
+  token: ""                   # Discord bot token, or use DISCORD_TOKEN env var
+  prefix: "!ask"              # command prefix: students type "!ask <question>"
+  channel_id: ""              # restrict bot to a channel (optional, leave empty for any)
+
+# vLLM server settings (used by docker-compose for the vLLM container)
+vllm:
+  gpu_memory_utilization: 0.90  # fraction of GPU VRAM vLLM may use
+  max_model_len: 8192          # max context window in tokens
+
+# FastAPI server settings
+api:
+  host: "0.0.0.0"
+  port: 8001
