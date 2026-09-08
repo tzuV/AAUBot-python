@@ -1,7 +1,47 @@
-data/
+# Secrets / env
 .env
+.env.*
+!.env.example
+
+# Runtime data (ChromaDB store, downloaded docs cache)
+data/
+
+# Logs
+logs/
+*.log
+*.log.*
+log/
+
+# Metadata / runtime state
+*.meta
+*.meta.json
+metadata/
+*.lock
+
+# Vibe session artifacts (Windows-path leak from WSL — dir literally named "C:\Users\...")
+# gitignore needs "\\" to match a literal backslash; * does not cross "/"
+C:\\Users\\jakob\\.vibe\\logs\\session
+
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 .venv/
+venv/
+env/
 *.egg-info/
-C:\Users\jakob\.vibe\
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
