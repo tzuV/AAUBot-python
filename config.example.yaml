@@ -10,8 +10,8 @@ test:
 
 # Generator (LLM) — served by vLLM's OpenAI-compatible API
 generator:
-  model: "Qwen/Qwen3-8B"          # HuggingFace model ID; must match VLLM_MODEL in .env
-  vllm_host: "vllm"              # vLLM container hostname (docker-compose service name)
+  model: "Qwen/Qwen3-8B"            # HuggingFace model ID; must match the model vLLM serves
+  vllm_host: "localhost"          # vLLM container hostname (docker-compose service name)
   vllm_port: 8000
   temperature: 0.3               # 0 = deterministic, 1 = creative
   max_tokens: 1024              # max answer length in tokens
@@ -22,12 +22,27 @@ generator:
 
     Answer the student's question using ONLY the provided context from the
     official Python documentation. Follow these rules:
-    1. Base your answer on the context below. If it does not contain the
+    1. LANGUAGE: Always reply in the same language as the question.
+       If the question is in Danish, write the entire answer in Danish.
+       If the question is in English, write the entire answer in English.
+       Never mix languages. Detect the question's language from the words
+       and grammar, not from this system prompt.
+    2. Base your answer on the context below. If it does not contain the
        answer, say "I don't have enough information in the Python
-       documentation to answer this."
-    2. Be concise and clear. These students are learning Python.
-    3. Include short code examples when helpful.
-    4. At the end, list which documentation sections you used.
+       documentation to answer this." (in the question's language).
+    3. PEDAGOGY: These students have NO prior technical expertise. Explain
+       concepts as if teaching someone who has never programmed before.
+       Use everyday analogies and simple language. Avoid jargon — if you
+       must use a technical term, explain it immediately in plain words.
+       Break down ideas step by step. Start with what the concept IS, then
+       why it's useful, then a simple example.
+    4. Be concise but thorough. These students are learning Python.
+    5. Include short, simple code examples with a comment explaining each
+       line. Keep examples minimal so they are easy to read.
+    6. Do NOT include a citations or sources section at the end of your
+       answer. The sources are added automatically by the bot.
+    7. Do NOT include your internal reasoning or thinking process in the
+       answer. Give the answer directly.
 
     --- Context from Python documentation ---
     {context}
@@ -35,7 +50,7 @@ generator:
 
 # Embedding model — runs in the app container via sentence-transformers
 embedding:
-  model: "BAAI/bge-m3"          # sentence-transformers / HuggingFace model ID
+  model: "BAAI/bge-small-en-v1.5"  # sentence-transformers / HuggingFace model ID (smaller)
   device: "cpu"                # "cpu" (default, simple) or "cuda" (needs GPU in app container)
   normalize: true              # normalize embeddings for cosine similarity
 
@@ -47,19 +62,19 @@ rag:
 
 # ChromaDB vector store (embedded, persistent on disk)
 chroma:
-  persist_path: "/app/data/chroma"
+  persist_path: "/tmp/chroma"
   collection_name: "python_docs"
 
 # Python documentation source
 docs:
-  url: "https://docs.python.org/3/archives/python-3.13.0-docs-html.zip"
-  cache_path: "/app/data/docs"
+  url: "https://docs.python.org/3.12/archives/python-3.12.2-docs-html.zip"
+  cache_path: "/tmp/docs"
 
 # Discord bot — students ask questions via Discord
 discord:
-  enabled: false              # set true (or set DISCORD_TOKEN env var) to start the bot
+  enabled: true              # set true (or set DISCORD_TOKEN env var) to start the bot
   token: ""                   # Discord bot token, or use DISCORD_TOKEN env var
-  prefix: "!ask"              # command prefix: students type "!ask <question>"
+  prefix: "!"                 # command prefix: students type "!ask <question>"
   channel_id: ""              # restrict bot to a channel (optional, leave empty for any)
 
 # vLLM server settings (used by docker-compose for the vLLM container)

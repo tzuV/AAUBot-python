@@ -3,6 +3,9 @@
 .env.*
 !.env.example
 
+# Config with secrets (use config.example.yaml as template)
+config.yaml
+
 # Runtime data (ChromaDB store, downloaded docs cache)
 data/
 

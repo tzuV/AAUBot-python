@@ -32,8 +32,11 @@ class RAGEngine:
         self.top_k = rag_cfg["top_k"]
 
     async def ask(self, question: str) -> dict:
-        # 1. Embed the question
-        query_embedding = self.embedder.embed_query(question)
+        # 1. Translate to English for retrieval (docs are English, embedder is English-only)
+        retrieval_query = await self.generator.translate_to_english(question)
+
+        # 2. Embed the (translated) question
+        query_embedding = self.embedder.embed_query(retrieval_query)
 
         # 2. Retrieve top-k chunks
         results = self.retriever.query(query_embedding, top_k=self.top_k)
@@ -45,8 +48,9 @@ class RAGEngine:
         sources = []
         for i, (doc, meta) in enumerate(zip(documents, metadatas)):
             title = meta.get("title", "Unknown")
-            context_parts.append(f"[{i + 1}] {title}\n{doc}")
-            sources.append({"title": title, "url": meta.get("url", "")})
+            url = meta.get("url", "")
+            context_parts.append(f"[{i + 1}] {title}\nURL: {url}\n{doc}")
+            sources.append({"title": title, "url": url})
         context = "\n\n".join(context_parts)
 
         # 4. Generate answer via vLLM

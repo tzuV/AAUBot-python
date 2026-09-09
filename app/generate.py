@@ -39,6 +39,35 @@ class Generator:
         response.raise_for_status()
         return response.json()["choices"][0]["message"]["content"]
 
+    async def translate_to_english(self, question: str) -> str:
+        """Translate a non-English question to English for retrieval.
+
+        The documentation is in English, so the embedding model (English-only)
+        needs an English query to retrieve relevant chunks.
+        """
+        response = await self.client.post(
+            f"{self.base_url}/v1/chat/completions",
+            json={
+                "model": self.model,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": (
+                            "Translate the user's question to English. "
+                            "Output ONLY the translated question, nothing else. "
+                            "If the question is already in English, return it as-is."
+                        ),
+                    },
+                    {"role": "user", "content": question},
+                ],
+                "temperature": 0.0,
+                "max_tokens": 256,
+                "top_p": 1.0,
+            },
+        )
+        response.raise_for_status()
+        return response.json()["choices"][0]["message"]["content"].strip()
+
     async def is_ready(self) -> bool:
         try:
             resp = await self.client.get(f"{self.base_url}/health")
